@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mahindra 575 XT DI Tracker</title>
+    <style>
+        body { font-family: sans-serif; background: #fdf2f2; margin: 0; padding: 10px; }
+        .container { max-width: 600px; margin: auto; }
+        .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; border-left: 5px solid #e11d48; position: relative; }
+        
+        .bio-info { font-size: 11px; color: #444; background: #fef2f2; padding: 10px; border-radius: 8px; margin: 10px 0; text-align: left; line-height: 1.5; border: 1px dashed #e11d48; position: relative; }
+        .edit-btn { position: absolute; top: 5px; right: 5px; background: #e11d48; color: white; border: none; border-radius: 4px; font-size: 9px; padding: 2px 5px; cursor: pointer; }
+        
+        .emi-mini { position: absolute; top: -10px; right: 5px; background: #1e293b; color: #fbbf24; padding: 8px; border-radius: 8px; font-size: 10px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 10; border: 1px solid #fbbf24; }
+        
+        h3 { color: #e11d48; margin: 0 0 10px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-top: 8px; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        
+        .btn-main { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #e11d48; color: #fff; margin-top: 10px; }
+        
+        .summary-box { background: #1e293b; color: white; padding: 10px; border-radius: 10px; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .sum-item { text-align: center; padding: 4px; border-radius: 5px; font-size: 12px; }
+        .sum-item span { display: block; font-size: 14px; font-weight: bold; color: #fbbf24; }
+
+        .filter-bar { display: flex; gap: 5px; align-items: flex-end; margin-bottom: 10px; background: #f1f5f9; padding: 8px; border-radius: 8px; }
+        .filter-bar div { flex: 1; }
+        .filter-bar label { margin-top: 0; font-size: 9px; }
+        .filter-bar input { padding: 5px; font-size: 11px; }
+
+        .range-settle { background: #fffbeb; border: 1px solid #fbbf24; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .range-settle input { width: 100px; padding: 4px; font-size: 10px; }
+        .btn-lock { background: #1e293b; color: #fbbf24; border: none; padding: 6px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        th, td { padding: 8px 4px; text-align: left; border-bottom: 1px solid #eee; }
+        
+        .badge { padding: 3px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center; display: inline-block; }
+        .st-pending { background: #fee2e2; color: #b91c1c; }
+        .st-clear { background: #dcfce7; color: #166534; } 
+        .st-approved { background: #e0f2fe; color: #0369a1; border: 1px solid #0369a1; }
+        .st-wait { background: #fef3c7; color: #92400e; border: 1px solid #92400e; }
+        
+        .action-container { display: flex; flex-direction: column; gap: 4px; width: 75px; }
+        .date-label { font-size: 8px; color: #777; margin-top: 1px; line-height: 1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="loginPage" class="card" style="border:none; text-align:center; padding-top:40px;">
+        <div style="font-size: 40px; margin-bottom: 10px;">🚜</div>
+        <h2 style="color:#e11d48;">Mahindra 575 XT DI</h2>
+        <p style="font-size:12px; color:#666; margin-bottom:5px;">डिजिटल सप्लाई ट्रैकर</p>
+        
+        <div class="bio-info" id="bioBox">
+            <span id="bioText">जानकारी लोड हो रही है...</span>
+            <button class="edit-btn" id="bioEditBtn" onclick="editBio()" style="display:none;">Edit ✎</button>
+        </div>
+
+        <select id="userType">
+            <option value="OWNER">👑 ओनर (मालिक)</option>
+            <option value="ADMIN">🛡️ एडमिन</option>
+            <option value="HELPER">🚚 ड्राइवर / हेल्पर</option>
+        </select>
+        <input type="password" id="pin" placeholder="पिन (PIN) डालें" inputmode="numeric">
+        <button class="btn-main" onclick="doLogin()">प्रवेश करें</button>
+    </div>
+
+    <div id="mainApp" style="display:none;">
+        <div id="emiAlert" class="emi-mini" style="display:none;"></div>
+        <button onclick="location.reload()" style="float:right; background:#333; color:#fff; border:none; padding:5px 10px; border-radius:4px; font-size:10px;">लॉग आउट</button>
+        <p id="modeName" style="font-weight:bold; color:#e11d48; font-size:14px; margin:0;"></p>
+
+        <div id="ownerSection" style="display:none;">
+            <div class="summary-box">
+                <div class="sum-item" style="background:#064e3b;">कुल बचत <span id="netProfit">₹0</span></div>
+                <div class="sum-item" style="background:#7f1d1d;">कुल खर्चा <span id="totalExp">₹0</span></div>
+            </div>
+            <div id="emiCard" class="card" style="display:none; border-left-color: #fbbf24; background: #fffbeb;">
+                <h3>📅 ट्रैक्टर किस्त (₹53,000)</h3>
+                <div id="emiList"></div>
+                <label>नई तारीख जोड़ें</label>
+                <input type="date" id="newEmiDate">
+                <button onclick="addEmi()" style="background:#fbbf24; border:none; padding:8px; width:100%; border-radius:5px; font-weight:bold; margin-top:5px;">शेड्यूल करें</button>
+            </div>
+        </div>
+
+        <div class="card" id="entryForm">
+            <h3>📝 नई सप्लाई भरें</h3>
+            <label>तारीख</label><input type="date" id="m-date">
+            <input type="text" id="m-route" placeholder="रूट (कहाँ से कहाँ?)">
+            <label>मात्रा (ईंटें)</label>
+            <select id="m-qty">
+                <option value="1000">1000</option><option value="2000">2000</option><option value="3000">3000</option><option value="4000">4000</option>
+                <option value="5000">5000</option><option value="6000">6000</option><option value="7000">7000</option><option value="8000">8000</option>
+            </select>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="m-diesel" placeholder="डीजल ₹">
+                <input type="number" id="m-extra" placeholder="अन्य ₹">
+            </div>
+            <button class="btn-main" onclick="saveData()">सबमिट करें</button>
+        </div>
+
+        <div class="card">
+            <h3>📊 सप्लाई और हिसाब</h3>
+            <div id="rangeSettleBox" class="range-settle" style="display:none;">
+                <span style="font-size:10px; font-weight:bold;">रेंज OK:</span>
+                <input type="date" id="r-start">
+                <span style="font-size:10px;">से</span>
+                <input type="date" id="r-end">
+                <button class="btn-lock" onclick="bulkClear()">क्लियर & लॉक 🔒</button>
+            </div>
+            <div class="filter-bar">
+                <div><label>कब से</label><input type="date" id="f-start" onchange="updateUI()"></div>
+                <div><label>कब तक</label><input type="date" id="f-end" onchange="updateUI()"></div>
+                <button onclick="setDefaultFilter()" style="font-size:8px; padding:4px;">Reset</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="mainTable">
+                    <thead>
+                        <tr><th>विवरण</th><th>Qty</th><th>रेट/1000</th><th>एक्शन</th></tr>
+                    </thead>
+                    <tbody id="hBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // पिन और यूजर डेटा
+    const PINS = { "OWNER": "1", "ADMIN": "2", "HELPER": "3" };
+    
+    let db = JSON.parse(localStorage.getItem('M575_FINAL_DB')) || [];
+    let emis = JSON.parse(localStorage.getItem('M575_FINAL_EMI')) || [];
+    let bioData = localStorage.getItem('M575_BIO') || "<b>मालिक:</b> यहाँ नाम लिखें <br> <b>ट्रैक्टर:</b> Mahindra 575 XT DI <br> <b>लोकेशन:</b> यहाँ जगह लिखें";
+    let userRole = "";
+
+    document.getElementById('bioText').innerHTML = bioData;
+
+    function doLogin() {
+        const selectedRole = document.getElementById('userType').value;
+        const enteredPin = document.getElementById('pin').value.trim();
+
+        // मिलान चेक करें
+        if (enteredPin === PINS[selectedRole]) {
+            userRole = selectedRole;
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('modeName').innerText = "📍 मोड: " + userRole;
+            document.getElementById('m-date').valueAsDate = new Date();
+            
+            if (userRole === 'OWNER') {
+                document.getElementById('bioEditBtn').style.display = 'block';
+                document.getElementById('ownerSection').style.display = 'block';
+                document.getElementById('rangeSettleBox').style.display = 'flex';
+                document.getElementById('emiCard').style.display = 'block';
+            } else if (userRole === 'ADMIN') {
+                document.getElementById('ownerSection').style.display = 'block';
+                document.getElementById('rangeSettleBox').style.display = 'flex';
+            }
+            setDefaultFilter();
+        } else {
+            alert("गलत पिन! \nओनर: 1 \nएडमिन: 2 \nहेल्पर: 3");
+        }
+    }
+
+    function editBio() {
+        let newBio = prompt("अपनी जानकारी अपडेट करें:", bioData);
+        if(newBio !== null) {
+            bioData = newBio;
+            localStorage.setItem('M575_BIO', bioData);
+            document.getElementById('bioText').innerHTML = bioData;
+        }
+    }
+
+    function formatDate(dateStr) {
+        if(!dateStr) return "-";
+        const d = new Date(dateStr);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
+    function setDefaultFilter() {
+        const end = new Date(); 
+        const start = new Date(); 
+        start.setDate(end.getDate() - 15);
+        document.getElementById('f-start').value = start.toISOString().split('T')[0];
+        document.getElementById('f-end').value = end.toISOString().split('T')[0];
+        updateUI();
+    }
+
+    function saveData() {
+        const route = document.getElementById('m-route').value;
+        if(!route) return alert("रूट लिखें!");
+        const entry = {
+            id: Date.now(),
+            date: document.getElementById('m-date').value,
+            route: route,
+            qty: parseInt(document.getElementById('m-qty').value),
+            diesel: parseFloat(document.getElementById('m-diesel').value) || 0,
+            extra: parseFloat(document.getElementById('m-extra').value) || 0,
+            rate: 750, 
+            status: "PENDING",
+            approved: false,
+            clearedDate: ""
+        };
+        db.push(entry);
+        localStorage.setItem('M575_FINAL_DB', JSON.stringify(db));
+        document.getElementById('m-route').value = '';
+        document.getElementById('m-diesel').value = '';
+        document.getElementById('m-extra').value = '';
+        updateUI();
+        alert("सप्लाई सुरक्षित की गई!");
+    }
+
+    function updateUI() {
+        const emiList = document.getElementById('emiList');
+        const emiAlert = document.getElementById('emiAlert');
+        if(emiList) emiList.innerHTML = ''; 
+        let nextEmiText = "";
+
+        // EMI
+        emis.forEach((e, i) => {
+            const daysLeft = Math.ceil((new Date(e.date) - new Date()) / (1000 * 60 * 60 * 24));
+            if(!e.paid && nextEmiText === "") {
+                nextEmiText = daysLeft < 0 ? `किस्त OVERDUE!` : `किस्त: ${daysLeft} दिन में`;
+                emiAlert.style.display = 'block'; emiAlert.innerText = nextEmiText;
+            }
+            if(userRole === 'OWNER' && emiList) {
+                emiList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:11px;">
+                    <span>${formatDate(e.date)}</span>
+                    <span class="badge ${e.paid?'st-clear':'st-pending'}" onclick="toggleEmi(${i})">${e.paid?'Paid':'बाकी'}</span>
+                </div>`;
+            }
+        });
+
+        const body = document.getElementById('hBody');
+        if(!body) return; body.innerHTML = '';
+        let tEarn = 0, tExp = 0;
+        const fStart = document.getElementById('f-start').value;
+        const fEnd = document.getElementById('f-end').value;
+
+        // फिल्टर के हिसाब से टोटल कैलकुलेशन
+        db.filter(x => (!fStart || !fEnd) ? true : (x.date >= fStart && x.date <= fEnd))
+        .slice().sort((a,b) => b.id - a.id).forEach((x) => {
+            const actualIdx = db.findIndex(item => item.id === x.id);
+            const exp = x.diesel + x.extra;
+            const earn = (x.qty / 1000) * (x.rate || 750);
+            
+            if(x.approved) { 
+                tEarn += earn; 
+                tExp += exp; 
+            }
+
+            let rateCell = (userRole === 'OWNER' || userRole === 'ADMIN') ? 
+                `<input type="number" value="${x.rate || 750}" style="width:40px; padding:2px;" onchange="updateRate(${actualIdx}, this.value)" ${x.status==='CLEARED'?'disabled':''}>` : (x.rate || 750);
+            
+            body.innerHTML += `<tr>
+                <td><b>${formatDate(x.date)}</b><br>${x.route}</td>
+                <td>${x.qty}</td>
+                <td>${rateCell}</td>
+                <td>
+                    <div class="action-container">
+                        <span class="badge ${x.approved?'st-approved':'st-wait'}" 
+                              onclick="${(userRole==='OWNER' || (userRole==='ADMIN' && x.status==='PENDING'))?`toggleApproval(${actualIdx})`:''}">
+                            ${x.approved?'✅ ₹'+earn.toFixed(0):'अप्रूवल?'}
+                        </span>
+                        <span class="badge ${x.status==='PENDING'?'st-pending':'st-clear'}" 
+                              onclick="toggleStatus(${actualIdx})">
+                            ${x.status==='PENDING'?'बाकी':'OK 🔒'}
+                        </span>
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        if(userRole === 'OWNER' || userRole === 'ADMIN') {
+            document.getElementById('netProfit').innerText = "₹" + (tEarn - tExp).toFixed(0);
+            document.getElementById('totalExp').innerText = "₹" + tExp.toFixed(0);
+        }
+    }
+
+    function updateRate(idx, val) { db[idx].rate = parseFloat(val) || 0; localStorage.setItem('M575_FINAL_DB', JSON.stringify(db)); updateUI(); }
+    function toggleApproval(idx) { db[idx].approved = !db[idx].approved; localStorage.setItem('M575_FINAL_DB', JSON.stringify(db)); updateUI(); }
+    function addEmi() {
+        const d = document.getElementById('newEmiDate').value;
+        if(!d) return alert("तारीख चुनें!");
+        emis.push({ date: d, amount: 53000, paid: false });
+        emis.sort((a,b) => new Date(a.date) - new Date(b.date));
+        localStorage.setItem('M575_FINAL_EMI', JSON.stringify(emis));
+        updateUI();
+    }
+    function toggleEmi(idx) {
+        emis[idx].paid = !emis[idx].paid;
+        localStorage.setItem('M575_FINAL_EMI', JSON.stringify(emis));
+        updateUI();
+    }
+    function bulkClear() {
+        const s = document.getElementById('r-start').value;
+        const e = document.getElementById('r-end').value;
+        if(!s || !e) return alert("दोनों तारीखें चुनें!");
+        db.forEach(x => {
+            if(x.date >= s && x.date <= e && x.status === "PENDING" && x.approved) {
+                x.status = "CLEARED";
+                x.clearedDate = new Date().toISOString().split('T')[0];
+            }
+        });
+        localStorage.setItem('M575_FINAL_DB', JSON.stringify(db));
+        updateUI();
+    }
+    function toggleStatus(idx) { 
+        if(db[idx].status === "CLEARED") {
+            if(userRole === 'OWNER') {
+                if(confirm("वापस 'बाकी' करें?")) {
+                    db[idx].status = "PENDING";
+                    localStorage.setItem('M575_FINAL_DB', JSON.stringify(db)); updateUI();
+                }
+            } else { alert("सिर्फ ओनर हिसाब खोल सकता है।"); }
+            return;
+        }
+        if(userRole === 'OWNER' || userRole === 'ADMIN') {
+            if(confirm("हिसाब पक्का करें?")) {
+                db[idx].status = "CLEARED";
+                localStorage.setItem('M575_FINAL_DB', JSON.stringify(db)); updateUI();
+            }
+        }
+    }
+</script>
+</body>
+</html>
